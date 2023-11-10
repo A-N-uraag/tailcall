@@ -59,7 +59,6 @@ impl Lambda<serde_json::Value> {
       None,
     )))
   }
-
 }
 
 impl<A> From<A> for Lambda<A>

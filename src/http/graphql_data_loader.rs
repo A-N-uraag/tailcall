@@ -11,8 +11,7 @@ use crate::config::Batch;
 use crate::http::{DataLoaderRequest, HttpClient, Response};
 
 #[derive(Clone)]
-pub struct GraphqlDataLoader
-{
+pub struct GraphqlDataLoader {
   pub client: Arc<dyn HttpClient>,
 }
 impl GraphqlDataLoader {
