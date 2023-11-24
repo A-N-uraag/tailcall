@@ -469,7 +469,7 @@ fn validate_query(config: &Config) -> Valid<(), String> {
         return Valid::fail("Query type is not defined".to_owned()).trace(query_type_name);
       };
 
-      Valid::from_iter(query.fields.iter(), validate_field_has_resolver).trace(query_type_name)
+      Valid::from_iter(query.fields.iter(), |subfield| validate_field_can_be_resolved(subfield, config)).trace(query_type_name)
     })
     .unit()
 }
@@ -484,6 +484,26 @@ fn validate_mutation(config: &Config) -> Valid<(), String> {
 
     Valid::from_iter(mutation.fields.iter(), validate_field_has_resolver)
       .trace(mutation_type_name)
+      .unit()
+  } else {
+    Valid::succeed(())
+  }
+}
+
+fn validate_field_can_be_resolved((_, field): (&String, &Field), config: &Config) -> Valid<(), String> {
+
+  let field_type_name = &field.type_of;
+  if !field.has_resolver() {
+    let Some(query_field) = config.find_type(&field_type_name) else {
+      return Valid::fail(format!("Undeclared type '{}' was found", field_type_name));
+    };
+
+    if query_field.fields.iter().any(|(_, subfield)| is_scalar(&subfield.type_of)) {
+      return Valid::fail(format!("No way to resolve fields in {} from", field_type_name)).trace(&field_type_name);
+    }
+
+    Valid::from_iter(query_field.fields.iter(), |subfield| validate_field_can_be_resolved(subfield, config))
+      .trace(field_type_name)
       .unit()
   } else {
     Valid::succeed(())
